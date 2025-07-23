@@ -1,31 +1,17 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import torch
 import os
-from huggingface_hub import login
-from transformers import AutoProcessor, AutoTokenizer, Gemma3nForConditionalGeneration
+import requests
 
-# Get HF token (for gated/private models)
-hf_token = os.getenv("HF_TOKEN")
-if hf_token:
-    login(token=hf_token)
+HF_TOKEN = os.getenv("HF_TOKEN")  # set this in Render dashboard
+HF_MODEL = "google/gemma-3n-e2b-it"
+HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
 
-# Model config
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model_id = "google/gemma-3n-e2b-it"
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}",
+    "Content-Type": "application/json"
+}
 
-# Load model
-print(f"Loading model on device: {device}")
-model = Gemma3nForConditionalGeneration.from_pretrained(
-    model_id,
-    torch_dtype=torch.bfloat16 if device == "cuda" else torch.float32,
-    token=hf_token
-).eval().to(device)
-
-processor = AutoProcessor.from_pretrained(model_id, token=hf_token)
-tokenizer = AutoTokenizer.from_pretrained(model_id, token=hf_token)
-
-# FastAPI app
 app = FastAPI()
 
 class ChatRequest(BaseModel):
@@ -35,7 +21,7 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    # Create basic system and user message history
+    # Construct system + user prompt as message format
     messages = [
         {
             "role": "system",
@@ -54,23 +40,18 @@ async def chat(request: ChatRequest):
         }
     ]
 
-    # Generate response
     try:
-        prompt_text = processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=False
-        )
-        inputs = tokenizer(prompt_text, return_tensors="pt")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        response = requests.post(HF_API_URL, headers=headers, json={"inputs": messages})
+        response.raise_for_status()
+        result = response.json()
+        
+        # Hugging Face API typically returns a list of strings or dict
+        if isinstance(result, list) and len(result) > 0:
+            return {"response": result[0].get("generated_text", "").strip()}
+        elif isinstance(result, dict) and "error" in result:
+            return {"error": result["error"]}
+        else:
+            return {"response": str(result)}
 
-        with torch.no_grad():
-            output = model.generate(**inputs, max_new_tokens=200, do_sample=False)
-
-        generated_ids = output[0][inputs["input_ids"].shape[-1]:]
-        reply = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
-
-        return {"response": reply}
-
-    except Exception as e:
-        return {"error": str(e)}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Request failed: {str(e)}"}
