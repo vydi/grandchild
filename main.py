@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 import requests
@@ -14,6 +15,16 @@ headers = {
 
 app = FastAPI()
 
+# ✅ Enable CORS to allow frontend on GitHub Pages to talk to backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or ["https://vydi.github.io"] for tighter security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Optional root route
 @app.get("/")
 async def root():
     return {"message": "👋 This is the Grandchild Assistant API. Use POST /chat."}
@@ -25,7 +36,7 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    print("🟢 Incoming request:", request.dict())  # Log to Render console
+    print("🟢 Incoming request:", request.dict())
 
     messages = [
         {
