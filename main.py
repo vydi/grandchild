@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import os
 import requests
 
-HF_TOKEN = os.getenv("HF_TOKEN")  # set this in Render dashboard
+HF_TOKEN = os.getenv("HF_TOKEN")
 HF_MODEL = "google/gemma-3n-e2b-it"
 HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
 
@@ -14,6 +14,10 @@ headers = {
 
 app = FastAPI()
 
+@app.get("/")
+async def root():
+    return {"message": "👋 This is the Grandchild Assistant API. Use POST /chat."}
+
 class ChatRequest(BaseModel):
     userName: str
     grandchildName: str
@@ -21,7 +25,8 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    # Construct system + user prompt as message format
+    print("🟢 Incoming request:", request.dict())  # Log to Render console
+
     messages = [
         {
             "role": "system",
@@ -44,14 +49,16 @@ async def chat(request: ChatRequest):
         response = requests.post(HF_API_URL, headers=headers, json={"inputs": messages})
         response.raise_for_status()
         result = response.json()
-        
-        # Hugging Face API typically returns a list of strings or dict
+
         if isinstance(result, list) and len(result) > 0:
-            return {"response": result[0].get("generated_text", "").strip()}
-        elif isinstance(result, dict) and "error" in result:
+            reply = result[0].get("generated_text", "").strip()
+            print("✅ Reply:", reply)
+            return {"response": reply}
+        elif "error" in result:
+            print("❌ HF API Error:", result["error"])
             return {"error": result["error"]}
         else:
             return {"response": str(result)}
-
     except requests.exceptions.RequestException as e:
+        print("❌ RequestException:", str(e))
         return {"error": f"Request failed: {str(e)}"}
