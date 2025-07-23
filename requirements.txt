@@ -1,5 +1,3 @@
 fastapi
 uvicorn
-torch
-transformers
-huggingface_hub
+requests
