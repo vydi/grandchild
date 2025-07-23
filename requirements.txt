@@ -2,4 +2,3 @@ fastapi
 uvicorn
 transformers
 torch
-google-cloud-firestore
