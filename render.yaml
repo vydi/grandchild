@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: grandchild-assistant
+    env: docker
+    plan: starter
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    rootDir: .
