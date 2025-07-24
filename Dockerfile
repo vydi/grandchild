@@ -1,25 +1,32 @@
-FROM python:3.10-slim
+FROM ubuntu:22.04
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git build-essential cmake curl wget \
+    libopenblas-dev libomp-dev \
+    && apt-get clean
+
+# Set work directory
 WORKDIR /app
 
-# Install system deps
-RUN apt-get update && apt-get install -y git cmake build-essential curl wget libopenblas-dev libomp-dev && apt-get clean
+# Clone llama.cpp repo and checkout stable version
+RUN git clone https://github.com/ggerganov/llama.cpp.git
+WORKDIR /app/llama.cpp
 
-# Copy everything
-COPY . .
-
-# Clone and build llama.cpp
-RUN git clone https://github.com/ggerganov/llama.cpp && \
-    cd llama.cpp && \
-    cmake -B build -DLLAMA_BUILD_EXAMPLES=ON -DLLAMA_BUILD_SERVER=ON && \
+# Build llama-server
+RUN cmake -DLLAMA_BUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release -B build && \
     cmake --build build --config Release
 
-# Install Python deps
-RUN pip install -r requirements.txt
+# Go back and copy only what's needed
+WORKDIR /app
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
-# Download model
-RUN python app/download_model.py
+# Download model from GCS at runtime (or mount volume if preferred)
+ENV MODEL_URL=https://storage.googleapis.com/grandchild/gemma-3n-e4b-it.Q4_K_M.gguf
 
+# Expose default port
 EXPOSE 8080
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Start server
+CMD ["./entrypoint.sh"]
