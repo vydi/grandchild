@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: gemma-server
-    env: docker
-    plan: free
-    autoDeploy: true
-    repo: https://github.com/vydi/grandchild
-    rootDir: gemma-server
-    dockerfilePath: ./Dockerfile
