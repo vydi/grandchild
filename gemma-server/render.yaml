@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: gemma3n-server
-    env: docker
-    plan: free
-    dockerfilePath: ./Dockerfile
-    autoDeploy: true
-    region: oregon
-
