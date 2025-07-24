@@ -1,2 +1,5 @@
-gemma-server/*.gguf
+models/
+*.gguf
 llama.cpp/
+__pycache__/
+.env
