@@ -1,32 +1,24 @@
 FROM ubuntu:22.04
 
-# Install system dependencies
+# System dependencies
 RUN apt-get update && apt-get install -y \
-    git build-essential cmake curl wget \
-    libopenblas-dev libomp-dev \
+    git build-essential cmake wget curl libopenblas-dev libomp-dev \
     && apt-get clean
 
-# Set work directory
+# Clone llama.cpp
+RUN git clone https://github.com/ggerganov/llama.cpp.git /app
 WORKDIR /app
-
-# Clone llama.cpp repo and checkout stable version
-RUN git clone https://github.com/ggerganov/llama.cpp.git
-WORKDIR /app/llama.cpp
 
 # Build llama-server
-RUN cmake -DLLAMA_BUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release -B build && \
+RUN cmake -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_EXAMPLES=ON -DCMAKE_BUILD_TYPE=Release -B build && \
     cmake --build build --config Release
 
-# Go back and copy only what's needed
-WORKDIR /app
-COPY entrypoint.sh .
-RUN chmod +x entrypoint.sh
+# Create models directory and download model from GCS
+RUN mkdir -p /app/models && \
+    curl -o /app/models/gemma-3n-e4b-it.Q4_K_M.gguf https://storage.googleapis.com/grandchild/gemma-3n-e4b-it.Q4_K_M.gguf
 
-# Download model from GCS at runtime (or mount volume if preferred)
-ENV MODEL_URL=https://storage.googleapis.com/grandchild/gemma-3n-e4b-it.Q4_K_M.gguf
-
-# Expose default port
+# Expose port
 EXPOSE 8080
 
-# Start server
-CMD ["./entrypoint.sh"]
+# Run the model server
+CMD ["/app/build/bin/llama-server", "-m", "/app/models/gemma-3n-e4b-it.Q4_K_M.gguf", "--port", "8080"]
