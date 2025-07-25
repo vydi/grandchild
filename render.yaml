@@ -1,11 +1,12 @@
 services:
   - type: web
-    name: grandchild-assistant
-    env: docker
-    plan: free
+    name: grandchild-api
+    runtime: docker
     region: oregon
+    plan: starter
+    image:
+      url: us-central1-docker.pkg.dev/huzza-world/grandchild-repo/grandchild-api
     envVars:
-      - key: HF_ENDPOINT
-        value: https://esmw258a79hmh8hw.us-east4.gcp.endpoints.huggingface.cloud
-      - key: HF_TOKEN
-        sync: false
+      - key: PORT
+        value: 8080
+    autoDeploy: true
