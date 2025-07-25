@@ -2,10 +2,10 @@ services:
   - type: web
     name: grandchild-assistant
     env: docker
-    plan: starter
+    plan: free
     region: oregon
-    branch: main
-    dockerfilePath: ./Dockerfile
-    buildCommand: ""
-    startCommand: ""
-    rootDir: .
+    envVars:
+      - key: HF_ENDPOINT
+        value: https://esmw258a79hmh8hw.us-east4.gcp.endpoints.huggingface.cloud
+      - key: HF_TOKEN
+        sync: false
