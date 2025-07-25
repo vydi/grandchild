@@ -1,4 +1,6 @@
-flask
-requests
+fastapi
 uvicorn[standard]
-Fastapi
+llama-cpp-python>=0.2.20
+python-multipart
+tqdm
+requests

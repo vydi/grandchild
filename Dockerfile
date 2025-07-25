@@ -1,36 +1,42 @@
 FROM ubuntu:22.04
 
-# Install required dependencies, including libcurl for CMake
+# Set environment
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git cmake build-essential wget curl libcurl4-openssl-dev \
-    libopenblas-dev libomp-dev clang \
-    && apt-get clean
+    git \
+    cmake \
+    build-essential \
+    curl \
+    wget \
+    python3 \
+    python3-pip \
+    python3-venv \
+    libopenblas-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Clone llama.cpp
+# Clone llama.cpp and build it
 RUN git clone https://github.com/ggerganov/llama.cpp.git /app/llama.cpp
-
-# Set working directory
 WORKDIR /app/llama.cpp
+RUN cmake -DLLAMA_BUILD_SERVER=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release -B build \
+    && cmake --build build --config Release
 
-# Build llama.cpp without server or example binaries
-RUN cmake -DLLAMA_BUILD_SERVER=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release -B build && \
-    cmake --build build --config Release
-
-# Set working directory for your app code
+# Set working directory for app
 WORKDIR /app
 
-# Copy app code
+# Copy all source files
 COPY . /app/
 
-# Make entrypoint script executable
+# Ensure entrypoint is executable
 RUN chmod +x /app/entrypoint.sh
 
 # Install Python dependencies
-RUN apt-get install -y python3-pip && \
-    pip3 install --no-cache-dir -r /app/requirements.txt
+RUN pip3 install --no-cache-dir --upgrade pip \
+    && pip3 install --no-cache-dir -r requirements.txt
 
 # Expose API port
 EXPOSE 8080
 
-# Run the entrypoint
-CMD ["/app/entrypoint.sh"]
+# Start the server
+ENTRYPOINT ["/app/entrypoint.sh"]

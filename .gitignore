@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+
+# Model weights
+*.gguf
+
+# Environment files
+.env
+.venv/
+env/
+venv/
+
+# macOS system files
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Log files
+*.log
+
+# Docker
+*.tar
