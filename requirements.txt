@@ -1,2 +1,4 @@
 flask
 requests
+uvicorn[standard]
+Fastapi

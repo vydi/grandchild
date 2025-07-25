@@ -3,10 +3,11 @@ services:
     name: grandchild-api
     runtime: docker
     region: oregon
-    plan: starter
-    image:
-      url: us-central1-docker.pkg.dev/huzza-world/grandchild-repo/grandchild-api
+    plan: free
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT
         value: 8080
-    autoDeploy: true
+    image:
+      url: us-central1-docker.pkg.dev/huzza-world/grandchild-repo/grandchild-api
