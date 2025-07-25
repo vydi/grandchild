@@ -1,5 +1,0 @@
-models/
-*.gguf
-llama.cpp/
-__pycache__/
-.env
